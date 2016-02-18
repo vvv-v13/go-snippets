@@ -33,6 +33,18 @@ func main() {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+                // Log request
+
+                // Set response Header
+                w.Header().Set("Content-Type", "application/json")
+
+                // Check Method
+                if r.Method != "POST" {
+                        w.WriteHeader(http.StatusMethodNotAllowed)
+                        io.WriteString(w, `{"status": 405, "message": "Method Not Allowed"}`)
+                        return
+                }
+
     log.Println("bubu")
 }
 
