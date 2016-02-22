@@ -1,9 +1,5 @@
 # go-snippets
 
-## Run
-  go run http_post_json.go 
-
-
 ## Curl
   ab -c 20 -n 10000 -p postfile.json -T 'application/json' http://127.0.0.1:8008/
 
