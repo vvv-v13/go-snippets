@@ -1,8 +1,10 @@
 package main
 
 import (
+        "errors"
 	"github.com/go-ozzo/ozzo-routing"
 	"github.com/go-ozzo/ozzo-routing/access"
+	"github.com/go-ozzo/ozzo-routing/auth"
 	"github.com/go-ozzo/ozzo-routing/content"
 	"github.com/go-ozzo/ozzo-routing/fault"
 	"github.com/go-ozzo/ozzo-routing/slash"
@@ -25,11 +27,15 @@ func main() {
 		fault.Recovery(log.Printf),
 	)
 
+	// Auth handler
+        router.Post("/api/auth", func(c *routing.Context) error { return authHandler(c) })
+
 	// serve RESTful APIs
 	api := router.Group("/api")
 
 	api.Use(
 		content.TypeNegotiator(content.JSON),
+		auth.Bearer(func(c *routing.Context, token string) (auth.Identity, error) { return jwtMiddleware(c, token) }),
 	)
 
 	api.Get("/users", func(c *routing.Context) error { return usersGet(c) })
@@ -53,7 +59,21 @@ func main() {
 	panic(server.ListenAndServe())
 }
 
+func jwtMiddleware(c *routing.Context, token string) (auth.Identity, error) {
+        // JWT processing must be here
+	if token == "Aladdin:open sesame" {
+		return auth.Identity("demo"), nil
+	}
+	return nil, errors.New("invalid credential")
+}
+
+
+func authHandler(c *routing.Context) error {
+	return c.Write("password")
+}
+
 func usersGet(c *routing.Context) error {
+        log.Println(c.Get(auth.User))
 	var users []User
 
 	user := User{
