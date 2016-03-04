@@ -4,10 +4,10 @@ import (
 	//"errors"
 	"github.com/go-ozzo/ozzo-routing"
 	"github.com/go-ozzo/ozzo-routing/access"
-	"github.com/vvv-v13/ozzo-routing/auth/jwt"
 	"github.com/go-ozzo/ozzo-routing/content"
 	"github.com/go-ozzo/ozzo-routing/fault"
 	"github.com/go-ozzo/ozzo-routing/slash"
+	"github.com/vvv-v13/ozzo-routing/auth/jwt"
 	"log"
 	"net/http"
 	"time"
@@ -24,23 +24,25 @@ func main() {
 	router.Use(
 		access.Logger(log.Printf),
 		slash.Remover(http.StatusMovedPermanently),
+		content.TypeNegotiator(content.JSON),
 		fault.Recovery(log.Printf),
 	)
 
-        jwtConfig := jwt.JWTConfig{
-            SecretKey: "super_secret",
-        }
-
+	jwtConfig := jwt.JWTConfig{
+		SecretKey: "super_secret",
+	}
 
 	// Auth handler
-	router.Post("/api/auth", func(c *routing.Context) error { return authHandler(c) })
+	router.Post("/api/auth", func(c *routing.Context) error { return authHandler(c, jwtConfig) })
 
 	// serve RESTful APIs
 	api := router.Group("/api")
 
 	api.Use(
-		content.TypeNegotiator(content.JSON),
-		jwt.JWT(func(c *routing.Context, payload map[string]interface {}) (jwt.Payload, error) { return jwtUserHandler(c, payload) }, jwtConfig),
+		//content.TypeNegotiator(content.JSON),
+		jwt.JWT(func(c *routing.Context, payload map[string]interface{}) (jwt.Payload, error) {
+			return jwtUserHandler(c, payload)
+		}, jwtConfig),
 	)
 
 	api.Get("/users", func(c *routing.Context) error { return usersGet(c) })
@@ -64,15 +66,19 @@ func main() {
 	panic(server.ListenAndServe())
 }
 
-func jwtUserHandler(c *routing.Context, payload map[string]interface {}) (jwt.Identity, error) {
-        // if  user id valid
-        return jwt.Identity(payload["userid"]), nil
-        // else
+func jwtUserHandler(c *routing.Context, payload map[string]interface{}) (jwt.Identity, error) {
+	// if  user id valid
+	return jwt.Identity(payload["id"]), nil
+	// else
 	// return nil, errors.New("invalid credential")
 }
 
-func authHandler(c *routing.Context) error {
-	return c.Write("password")
+func authHandler(c *routing.Context, jwtConfig jwt.JWTConfig) error {
+	token := jwt.CreateToken(jwtConfig)
+	data := map[string]string{
+		"token": token,
+	}
+	return c.Write(data)
 }
 
 func usersGet(c *routing.Context) error {
