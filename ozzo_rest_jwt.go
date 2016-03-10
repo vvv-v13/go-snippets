@@ -13,19 +13,12 @@ import (
 	"time"
 )
 
-/*
-type Post struct {
-	Id      int64  `json:"id"`
-	Message string `json:"message"`
-}
-*/
-
 func main() {
 
 	jwtConfig := jwt.JWTConfig{
 		Alg:    "HS256",
 		Secret: "super_secret",
-		Expires: time.Now().Add(time.Minute * 120).Unix(),
+		Expires: time.Minute * 120,
 	}
 
 	router := routing.New()
@@ -95,7 +88,7 @@ type Post struct {
 }
 
 func posts(c *routing.Context) error {
-	log.Println("user:", c.Get(jwt.User))
+	log.Println("User id:", c.Get(jwt.User))
 	var posts []Post
 
 	post := Post{
